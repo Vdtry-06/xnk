@@ -19,26 +19,22 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    /** Lấy tất cả payments (admin) */
     @GetMapping
     public ApiResponse<List<PaymentResponse>> getAll() {
         return ApiResponse.ok(paymentService.getAll());
     }
 
-    /** Lấy payment theo sales_order_id */
     @GetMapping("/by-sales-order/{salesOrderId}")
     public ApiResponse<PaymentResponse> getBySalesOrder(@PathVariable Long salesOrderId) {
         return ApiResponse.ok(paymentService.getBySalesOrderId(salesOrderId));
     }
 
-    /** Agent tạo thanh toán cho đơn hàng đã được duyệt */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PaymentResponse> create(@Valid @RequestBody CreatePaymentRequest req) {
         return ApiResponse.ok("Đã tạo yêu cầu thanh toán", paymentService.create(req));
     }
 
-    /** Manager xác nhận đã nhận tiền */
     @PatchMapping("/{id}/confirm-paid")
     @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<PaymentResponse> confirmPaid(

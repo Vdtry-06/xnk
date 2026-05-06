@@ -363,8 +363,9 @@ export default function AgentPaymentPage() {
               className="form-input"
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              // onChange={(e) => setAmount(e.target.value)}
               placeholder="Để trống = dùng tổng dự kiến"
+              disabled
               style={{
                 width: "100%",
                 marginTop: 4,

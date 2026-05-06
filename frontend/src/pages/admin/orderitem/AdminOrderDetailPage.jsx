@@ -49,7 +49,8 @@ export default function AdminOrderDetailPage() {
     try {
       await salesOrderApi.approve(id, managerId);
       toast.success("Đã duyệt");
-      refetch();
+      navigate("/admin/orders");
+      // refetch();
     } catch (e) {
       toast.error(e.response?.data?.message || "Lỗi");
     }

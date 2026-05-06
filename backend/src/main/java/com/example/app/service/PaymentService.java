@@ -26,7 +26,6 @@ public class PaymentService {
     private final SalesOrderRepository salesOrderRepository;
     private final ManagerRepository managerRepository;
 
-    /** Agent tạo yêu cầu thanh toán cho đơn hàng đã được duyệt */
     @Transactional
     public PaymentResponse create(CreatePaymentRequest req) {
         SalesOrder order = salesOrderRepository.findById(req.salesOrderId())
@@ -52,20 +51,17 @@ public class PaymentService {
         return toResponse(paymentRepository.save(payment));
     }
 
-    /** Lấy thông tin thanh toán theo ID đơn hàng */
     public PaymentResponse getBySalesOrderId(Long salesOrderId) {
         return paymentRepository.findBySalesOrderId(salesOrderId)
                 .map(this::toResponse)
                 .orElse(null);
     }
 
-    /** Lấy tất cả payments */
     public List<PaymentResponse> getAll() {
         return paymentRepository.findAll()
                 .stream().map(this::toResponse).toList();
     }
 
-    /** Manager xác nhận đã nhận thanh toán */
     @Transactional
     public PaymentResponse confirmPaid(Long paymentId, Long managerId) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -82,7 +78,6 @@ public class PaymentService {
         payment.setPaidAt(LocalDateTime.now());
         payment.setConfirmedBy(manager);
 
-        // Chuyển đơn hàng sang PROCESSING sau khi thanh toán xong
         SalesOrder order = payment.getSalesOrder();
         order.setStatus(OrderStatus.PROCESSING);
         salesOrderRepository.save(order);

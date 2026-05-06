@@ -24,7 +24,7 @@ export default function CreateAgentPage() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.username || !form.password || !form.code || !form.name) {
+    if (!form.username || !form.password || !form.code || !form.name || !form.phone || !form.address) {
       toast.error("Điền đầy đủ các trường bắt buộc");
       return;
     }
@@ -95,7 +95,7 @@ export default function CreateAgentPage() {
           </div>
           <div className="form-row" style={{ marginTop: 10 }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Điện thoại</label>
+              <label className="form-label">Điện thoại *</label>
               <input
                 className="form-control"
                 value={form.phone}
@@ -104,7 +104,7 @@ export default function CreateAgentPage() {
               />
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Địa chỉ</label>
+              <label className="form-label">Địa chỉ *</label>
               <input
                 className="form-control"
                 value={form.address}
