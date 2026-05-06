@@ -8,8 +8,8 @@ public record CreateDeliveryNoteRequest(
     @NotNull Long salesOrderId,
     @NotNull Long warehouseStaffId,
     @NotEmpty List<@Valid ItemRequest> deliveryNoteItems,
-    String trackingCode,
-    String carrierName,
+    @NotNull String trackingCode,
+    @NotNull String carrierName,
     @DecimalMin("0") BigDecimal shippingFee
 ) {
     public record ItemRequest(

@@ -43,9 +43,6 @@ public class DeliveryNoteService {
         if (so.getStatus() != OrderStatus.APPROVED && so.getStatus() != OrderStatus.PROCESSING)
             throw new IllegalStateException("Đơn hàng phải ở trạng thái APPROVED hoặc PROCESSING. Hiện: " + so.getStatus());
 
-        // Kiểm tra thanh toán: chỉ cho phép xuất hàng khi
-        // - Phương thức là CASH_ON_DELIVERY (thu tiền khi giao), HOẶC
-        // - Đã có payment với trạng thái PAID (đã chuyển khoản xác nhận)
         Payment payment = paymentRepository.findBySalesOrderId(so.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Đơn hàng chưa có thông tin thanh toán. Đại lý cần tạo yêu cầu thanh toán trước."));
@@ -66,7 +63,7 @@ public class DeliveryNoteService {
         Map<Long, OrderItem> orderItems = new HashMap<>();
         for (Long orderItemId : requestQtyByOrderItem.keySet()) {
             OrderItem item = orderItemRepository.findById(orderItemId)
-                    .orElseThrow(() -> new EntityNotFoundException("OrderItem not found: " + orderItemId));
+                    .orElseThrow(() -> new EntityNotFoundException("OrderItem không tìm thấy: " + orderItemId));
             if (!item.getSalesOrder().getId().equals(so.getId()))
                 throw new IllegalStateException("OrderItem không thuộc SalesOrder này: " + orderItemId);
             orderItems.put(orderItemId, item);

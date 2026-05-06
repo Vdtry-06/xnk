@@ -43,19 +43,4 @@ public class AuthController {
 
         return ApiResponse.ok(data);
     }
-
-    @GetMapping("/users")
-    public ApiResponse<List<Map<String, String>>> listUsers() {
-        List<Map<String, String>> users = userRepository.findAll().stream()
-                .map(u -> {
-                    Map<String, String> m = new HashMap<>();
-                    m.put("username", u.getUsername());
-                    m.put("role", u.getRole().name());
-                    if (u instanceof Agent a) m.put("name", a.getName());
-                    else if (u instanceof WarehouseStaff ws) m.put("name", ws.getName());
-                    return m;
-                })
-                .toList();
-        return ApiResponse.ok(users);
-    }
 }

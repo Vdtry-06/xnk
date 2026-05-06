@@ -4,12 +4,6 @@ const api = axios.create({ baseURL: '/api' })
 
 export const authApi = {
   login:     (data) => api.post('/auth/login', data),
-  listUsers: ()     => api.get('/auth/users'),
-}
-
-export const refApi = {
-  agents:         () => api.get('/ref/agents'),
-  warehouseStaffs:() => api.get('/ref/warehouse-staffs'),
 }
 
 export const salesOrderApi = {
