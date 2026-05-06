@@ -39,7 +39,7 @@ public class SalesOrderService {
     @Transactional
     public SalesOrderResponse create(CreateSalesOrderRequest req) {
         Agent agent = agentRepository.findById(req.agentId())
-                .orElseThrow(() -> new EntityNotFoundException("Agent not found: " + req.agentId()));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy id đại lý: " + req.agentId()));
 
         SalesOrder order = SalesOrder.builder().agent(agent).build();
 
