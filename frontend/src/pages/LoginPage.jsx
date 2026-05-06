@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { authApi } from '../api'
 import toast from 'react-hot-toast'
@@ -19,8 +19,8 @@ export default function LoginPage() {
       const res = await authApi.login({ username, password })
       login(res.data.data)
       const role = res.data.data.role
-      if (role === 'ADMIN')           navigate('/admin/orders')
-      else if (role === 'AGENT')      navigate('/orders')
+      if (role === 'ADMIN')                navigate('/admin/orders')
+      else if (role === 'AGENT')           navigate('/orders')
       else if (role === 'WAREHOUSE_STAFF') navigate('/delivery')
       else navigate('/')
     } catch (e) {
@@ -29,12 +29,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#f1f5f9' }}>
-      <div style={{ background:'#fff', padding:32, borderRadius:10, width:360, boxShadow:'0 2px 12px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ marginBottom:24, fontSize:20, fontWeight:700 }}>Đăng nhập</h2>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+      <div style={{ background: '#fff', padding: 32, borderRadius: 10, width: 360, boxShadow: '0 2px 12px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ marginBottom: 24, fontSize: 20, fontWeight: 700 }}>Đăng nhập</h2>
         <form onSubmit={submit}>
-          <div style={{ marginBottom:14 }}>
-            <label style={{ display:'block', fontSize:13, fontWeight:500, marginBottom:4 }}>Tên đăng nhập</label>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Tên đăng nhập</label>
             <input
               className="form-control"
               value={username}
@@ -43,8 +43,8 @@ export default function LoginPage() {
               autoFocus
             />
           </div>
-          <div style={{ marginBottom:20 }}>
-            <label style={{ display:'block', fontSize:13, fontWeight:500, marginBottom:4 }}>Mật khẩu</label>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Mật khẩu</label>
             <input
               type="password"
               className="form-control"
@@ -53,10 +53,15 @@ export default function LoginPage() {
               placeholder="123456"
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width:'100%' }} disabled={loading}>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
+
+        <p style={{ marginTop: 16, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+          Chưa có tài khoản admin?{' '}
+          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 500 }}>Đăng ký</Link>
+        </p>
       </div>
     </div>
   )

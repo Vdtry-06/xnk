@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import LoginPage              from './pages/LoginPage'
+import RegisterPage           from './pages/RegisterPage'
 import AgentOrdersPage        from './pages/agent/OrdersPage'
 import AgentCreateOrderPage   from './pages/agent/CreateOrderPage'
 import AgentOrderDetailPage   from './pages/agent/OrderDetailPage'
@@ -35,6 +36,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace/> : <LoginPage/>}/>
+      <Route path="/register" element={user ? <Navigate to="/" replace/> : <RegisterPage/>}/>
       <Route path="/" element={<DefaultRoute/>}/>
 
       {/* Agent */}

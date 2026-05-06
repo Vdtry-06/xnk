@@ -4,6 +4,7 @@ const api = axios.create({ baseURL: '/api' })
 
 export const authApi = {
   login:     (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
 }
 
 export const salesOrderApi = {

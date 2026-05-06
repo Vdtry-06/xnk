@@ -10,7 +10,7 @@ public record CreateSalesOrderRequest(
 ) {
     public record ItemRequest(
         @NotBlank String productName,
-        String productLink,
+        @NotBlank String productLink,
         @NotNull @Min(1) Integer quantity,
         @DecimalMin("0") BigDecimal estimatedUnitPrice
     ) {}
