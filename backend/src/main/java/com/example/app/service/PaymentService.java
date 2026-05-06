@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -58,8 +59,14 @@ public class PaymentService {
     }
 
     public List<PaymentResponse> getAll() {
-        return paymentRepository.findAll()
-                .stream().map(this::toResponse).toList();
+        List<Payment> payments = paymentRepository.findAll();
+        List<PaymentResponse> responses = new ArrayList<>();
+
+        for (Payment payment : payments) {
+            responses.add(toResponse(payment));
+        }
+
+        return responses;
     }
 
     @Transactional

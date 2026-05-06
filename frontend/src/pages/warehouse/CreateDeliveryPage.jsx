@@ -16,19 +16,16 @@ export default function CreateDeliveryPage() {
   const [selectedOrder,  setSelectedOrder]  = useState(null)
   const [loadingOrders,  setLoadingOrders]  = useState(true)
 
-  // 1 phiếu xuất có thể có nhiều sản phẩm
   const [items, setItems] = useState([{ orderItemId: '', deliveredQuantity: 1 }])
 
   const [trackingCode, setTrackingCode] = useState('')
   const [carrierName,  setCarrierName]  = useState('')
   const [shippingFee,  setShippingFee]  = useState('')
 
-  // Lỗi validation hiển thị inline
   const [errors, setErrors] = useState({})
 
   const [saving, setSaving] = useState(false)
 
-  // Load đơn hàng đủ điều kiện xuất
   useEffect(() => {
     Promise.all([
       salesOrderApi.getAll('APPROVED'),
@@ -60,10 +57,8 @@ export default function CreateDeliveryPage() {
     } catch { toast.error('Không tải được đơn hàng') }
   }
 
-  // Sản phẩm còn hàng chưa xuất đủ
   const availableItems = selectedOrder?.items?.filter(it => (it.remainingQuantity ?? it.quantity) > 0) ?? []
 
-  // IDs đã được chọn (để không cho chọn trùng)
   const usedIds = items.map(it => String(it.orderItemId)).filter(Boolean)
 
   const changeItem = (index, field, value) => {

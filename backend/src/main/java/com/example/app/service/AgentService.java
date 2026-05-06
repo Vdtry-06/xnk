@@ -12,6 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,7 +24,14 @@ public class AgentService {
     private final UserRepository  userRepository;
 
     public List<AgentResponse> getAll() {
-        return agentRepository.findAll().stream().map(this::toResponse).toList();
+        List<Agent> agents = agentRepository.findAll();
+        List<AgentResponse> responses = new ArrayList<>();
+
+        for (Agent agent : agents) {
+            responses.add(toResponse(agent));
+        }
+
+        return responses;
     }
 
     @Transactional

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,13 +24,25 @@ public class SalesOrderService {
     private final ManagerRepository      managerRepository;
 
     public List<SalesOrderResponse> getAll() {
-        return salesOrderRepository.findAllByOrderByCreatedAtDesc()
-                .stream().map(this::toResponse).toList();
+        List<SalesOrder> salesOrders = salesOrderRepository.findAllByOrderByCreatedAtDesc();
+        List<SalesOrderResponse> responses = new ArrayList<>();
+
+        for (SalesOrder salesOrder : salesOrders) {
+            responses.add(toResponse(salesOrder));
+        }
+
+        return responses;
     }
 
     public List<SalesOrderResponse> getByStatus(OrderStatus status) {
-        return salesOrderRepository.findByStatus(status)
-                .stream().map(this::toResponse).toList();
+        List<SalesOrder> salesOrders = salesOrderRepository.findByStatus(status);
+        List<SalesOrderResponse> responses = new ArrayList<>();
+
+        for (SalesOrder salesOrder : salesOrders) {
+            responses.add(toResponse(salesOrder));
+        }
+
+        return responses;
     }
 
     public SalesOrderResponse getById(Long id) {
@@ -43,19 +56,26 @@ public class SalesOrderService {
 
         SalesOrder order = SalesOrder.builder().agent(agent).build();
 
-        List<OrderItem> items = req.items().stream().map(r -> OrderItem.builder()
-                .salesOrder(order)
-                .productName(r.productName())
-                .productLink(r.productLink())
-                .quantity(r.quantity())
-                .estimatedUnitPrice(r.estimatedUnitPrice())
-                .build()).toList();
-
+        List<OrderItem> items = new ArrayList<>();
+        for (var r : req.items()) {
+            OrderItem item = OrderItem.builder()
+                    .salesOrder(order)
+                    .productName(r.productName())
+                    .productLink(r.productLink())
+                    .quantity(r.quantity())
+                    .estimatedUnitPrice(r.estimatedUnitPrice())
+                    .build();
+            items.add(item);
+        }
         order.setItems(items);
-        order.setTotalEstimatedPrice(items.stream()
-                .filter(i -> i.getEstimatedUnitPrice() != null)
-                .map(i -> i.getEstimatedUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (OrderItem item : items) {
+            if (item.getEstimatedUnitPrice() != null) {
+                total = total.add(item.getEstimatedUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            }
+        }
+        order.setTotalEstimatedPrice(total);
 
         return toResponse(salesOrderRepository.save(order));
     }
@@ -81,16 +101,17 @@ public class SalesOrderService {
     }
 
     private SalesOrderResponse toResponse(SalesOrder o) {
-        List<SalesOrderResponse.ItemResponse> items = o.getItems().stream().map(i -> {
+        List<SalesOrderResponse.ItemResponse> items = new ArrayList<>();
+        for (OrderItem i : o.getItems()) {
             int delivered = deliveryNoteItemRepository.sumDeliveredByOrderItem(i.getId());
             int remaining = Math.max(0, i.getQuantity() - delivered);
-            return new SalesOrderResponse.ItemResponse(
+            items.add(new SalesOrderResponse.ItemResponse(
                     i.getId(), i.getProductName(), i.getProductLink(),
-                    i.getQuantity(), i.getEstimatedUnitPrice(), remaining);
-        }).toList();
+                    i.getQuantity(), i.getEstimatedUnitPrice(), remaining));
+        }
 
-        Long approvedById = o.getApprovedBy() != null ? o.getApprovedBy().getId() : null;
-        String approvedByName = o.getApprovedBy() != null ? o.getApprovedBy().getUsername() : null;
+        Long approvedById     = o.getApprovedBy() != null ? o.getApprovedBy().getId()          : null;
+        String approvedByName = o.getApprovedBy() != null ? o.getApprovedBy().getUsername()    : null;
 
         return new SalesOrderResponse(
                 o.getId(), o.getAgent().getId(), o.getAgent().getName(),

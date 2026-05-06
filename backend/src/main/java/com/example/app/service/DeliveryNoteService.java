@@ -11,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,23 +28,38 @@ public class DeliveryNoteService {
     private final PaymentRepository         paymentRepository;
 
     public List<DeliveryNoteResponse> getAll() {
-        return deliveryNoteRepository.findAll().stream().map(this::toResponse).toList();
+        List<DeliveryNote> deliveryNotes = deliveryNoteRepository.findAll();
+        List<DeliveryNoteResponse> responses = new ArrayList<>();
+
+        for (DeliveryNote deliveryNote : deliveryNotes) {
+            responses.add(toResponse(deliveryNote));
+        }
+
+        return responses;
     }
 
     public List<DeliveryNoteResponse> getBySalesOrder(Long salesOrderId) {
-        return deliveryNoteRepository.findBySalesOrderId(salesOrderId)
-                .stream().map(this::toResponse).toList();
+        List<DeliveryNote> deliveryNotes = deliveryNoteRepository.findBySalesOrderId(salesOrderId);
+        List<DeliveryNoteResponse> responses = new ArrayList<>();
+
+        for (DeliveryNote deliveryNote : deliveryNotes) {
+            responses.add(toResponse(deliveryNote));
+        }
+
+        return responses;
     }
 
     @Transactional
     public DeliveryNoteResponse create(CreateDeliveryNoteRequest req) {
-        SalesOrder so = salesOrderRepository.findById(req.salesOrderId())
+        SalesOrder salesOrder = salesOrderRepository.findById(req.salesOrderId())
                 .orElseThrow(() -> new EntityNotFoundException("SalesOrder not found: " + req.salesOrderId()));
 
-        if (so.getStatus() != OrderStatus.APPROVED && so.getStatus() != OrderStatus.PROCESSING)
-            throw new IllegalStateException("Đơn hàng phải ở trạng thái APPROVED hoặc PROCESSING. Hiện: " + so.getStatus());
+        OrderStatus currentStatus = salesOrder.getStatus();
+        if (currentStatus != OrderStatus.APPROVED && currentStatus != OrderStatus.PROCESSING) {
+            throw new IllegalStateException("Đơn hàng phải ở trạng thái APPROVED hoặc PROCESSING. Hiện: " + currentStatus);
+        }
 
-        Payment payment = paymentRepository.findBySalesOrderId(so.getId())
+        Payment payment = paymentRepository.findBySalesOrderId(salesOrder.getId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Đơn hàng chưa có thông tin thanh toán. Đại lý cần tạo yêu cầu thanh toán trước."));
 
@@ -64,8 +80,9 @@ public class DeliveryNoteService {
         for (Long orderItemId : requestQtyByOrderItem.keySet()) {
             OrderItem item = orderItemRepository.findById(orderItemId)
                     .orElseThrow(() -> new EntityNotFoundException("OrderItem không tìm thấy: " + orderItemId));
-            if (!item.getSalesOrder().getId().equals(so.getId()))
+            if (!item.getSalesOrder().getId().equals(salesOrder.getId())) {
                 throw new IllegalStateException("OrderItem không thuộc SalesOrder này: " + orderItemId);
+            }
             orderItems.put(orderItemId, item);
         }
 
@@ -80,57 +97,71 @@ public class DeliveryNoteService {
             }
         }
 
-        WarehouseStaff staff = staffRepository.findById(req.warehouseStaffId())
+        WarehouseStaff warehouseStaff = staffRepository.findById(req.warehouseStaffId())
                 .orElseThrow(() -> new EntityNotFoundException("WarehouseStaff not found: " + req.warehouseStaffId()));
 
         DeliveryNote note = DeliveryNote.builder()
-                .salesOrder(so)
-                .agent(so.getAgent())
-                .warehouseStaff(staff)
+                .salesOrder(salesOrder)
+                .agent(salesOrder.getAgent())
+                .warehouseStaff(warehouseStaff)
                 .trackingCode(req.trackingCode())
                 .carrierName(req.carrierName())
                 .shippingFee(req.shippingFee())
                 .build();
 
-        List<DeliveryNoteItem> noteItems = req.deliveryNoteItems().stream()
-                .map(itemReq -> DeliveryNoteItem.builder()
-                        .deliveryNote(note)
-                        .orderItem(orderItems.get(itemReq.orderItemId()))
-                        .deliveredQuantity(itemReq.deliveredQuantity())
-                        .build())
-                .toList();
+        List<DeliveryNoteItem> noteItems = new ArrayList<>();
+        for (CreateDeliveryNoteRequest.ItemRequest itemReq : req.deliveryNoteItems()) {
+            DeliveryNoteItem noteItem = DeliveryNoteItem.builder()
+                    .deliveryNote(note)
+                    .orderItem(orderItems.get(itemReq.orderItemId()))
+                    .deliveredQuantity(itemReq.deliveredQuantity())
+                    .build();
+            noteItems.add(noteItem);
+        }
+
         note.setItems(noteItems);
         deliveryNoteRepository.save(note);
 
-        // Cập nhật trạng thái SalesOrder
-        so.setStatus(OrderStatus.PROCESSING);
-        // Kiểm tra tất cả items đã giao đủ chưa
-        boolean allDelivered = so.getItems().stream().allMatch(oi -> {
-            int delivered = deliveryNoteItemRepository.sumDeliveredByOrderItem(oi.getId());
-            return delivered >= oi.getQuantity();
-        });
-        if (allDelivered) so.setStatus(OrderStatus.COMPLETED);
-        salesOrderRepository.save(so);
+        salesOrder.setStatus(OrderStatus.PROCESSING);
+
+        boolean allDelivered = true;
+        for (OrderItem orderItem : salesOrder.getItems()) {
+            int delivered = deliveryNoteItemRepository.sumDeliveredByOrderItem(orderItem.getId());
+            if (delivered < orderItem.getQuantity()) {
+                allDelivered = false;
+                break;
+            }
+        }
+
+        if (allDelivered) {
+            salesOrder.setStatus(OrderStatus.COMPLETED);
+        }
+        salesOrderRepository.save(salesOrder);
 
         return toResponse(note);
     }
 
-    private DeliveryNoteResponse toResponse(DeliveryNote n) {
-        List<DeliveryNoteResponse.ItemResponse> itemResponses = n.getItems().stream()
-                .map(i -> new DeliveryNoteResponse.ItemResponse(
-                        i.getId(),
-                        i.getOrderItem().getId(),
-                        i.getOrderItem().getProductName(),
-                        i.getDeliveredQuantity()))
-                .toList();
+    private DeliveryNoteResponse toResponse(DeliveryNote deliveryNote) {
+        List<DeliveryNoteResponse.ItemResponse> itemResponses = new ArrayList<>();
+        for (DeliveryNoteItem item : deliveryNote.getItems()) {
+            DeliveryNoteResponse.ItemResponse itemResponse = new DeliveryNoteResponse.ItemResponse(
+                    item.getId(),
+                    item.getOrderItem().getId(),
+                    item.getOrderItem().getProductName(),
+                    item.getDeliveredQuantity());
+            itemResponses.add(itemResponse);
+        }
+
         return new DeliveryNoteResponse(
-                n.getId(),
-                n.getSalesOrder().getId(),
-                n.getAgent().getName(),
-                n.getAgent().getCode(),
-                n.getWarehouseStaff().getName(),
-                n.getTrackingCode(), n.getCarrierName(),
-                n.getShippingFee(), n.getCreatedAt(),
+                deliveryNote.getId(),
+                deliveryNote.getSalesOrder().getId(),
+                deliveryNote.getAgent().getName(),
+                deliveryNote.getAgent().getCode(),
+                deliveryNote.getWarehouseStaff().getName(),
+                deliveryNote.getTrackingCode(),
+                deliveryNote.getCarrierName(),
+                deliveryNote.getShippingFee(),
+                deliveryNote.getCreatedAt(),
                 itemResponses);
     }
 }

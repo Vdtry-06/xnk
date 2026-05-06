@@ -46,7 +46,6 @@ export default function AgentOrderDetailPage() {
         </div>
 
         <div style={{ display:'flex', gap:10 }}>
-          {/* Nút thanh toán chỉ hiện khi đơn đã APPROVED */}
           {(order.status === 'APPROVED' || order.status === 'PROCESSING') && (
             <button
               className="btn btn-primary"
